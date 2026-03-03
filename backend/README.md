@@ -38,6 +38,22 @@ source .venv/bin/activate
 python -m app.migrate
 ```
 
+## Run Ingestion (Library)
+```bash
+cd backend
+source .venv/bin/activate
+python - <<'PY'
+from pathlib import Path
+from app.ingestion import ingest_data_root
+
+stats = ingest_data_root(
+    db_path=Path("./data/clawmon.db"),
+    data_root=Path.home() / ".openclaw" / "agents",
+)
+print(stats)
+PY
+```
+
 ## Configuration
 Environment variables are auto-loaded from `backend/.env` on startup.
 Start by copying the template:
