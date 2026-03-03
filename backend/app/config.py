@@ -40,7 +40,13 @@ class Settings:
     db_path: Path
     enrichment_enabled: bool
     enrichment_budget_usd: float = 0.25
+    enrichment_provider: str = "local"
     enrichment_model: str = "local-heuristic-v1"
+    enrichment_openai_api_key: str | None = None
+    enrichment_openai_base_url: str = "https://api.openai.com/v1"
+    enrichment_timeout_seconds: float = 30.0
+    enrichment_input_cost_per_1m_usd: float = 0.0
+    enrichment_output_cost_per_1m_usd: float = 0.0
 
     @classmethod
     def from_env(cls, env_file: Path | None = None) -> "Settings":
@@ -54,11 +60,37 @@ class Settings:
             os.getenv("CLAWMON_ENRICHMENT_BUDGET_USD"),
             default=0.25,
         )
+        enrichment_provider = os.getenv("CLAWMON_ENRICHMENT_PROVIDER", "local").strip().lower()
         enrichment_model = os.getenv("CLAWMON_ENRICHMENT_MODEL", "local-heuristic-v1")
+        enrichment_openai_api_key = os.getenv("CLAWMON_OPENAI_API_KEY") or os.getenv(
+            "OPENAI_API_KEY"
+        )
+        enrichment_openai_base_url = os.getenv(
+            "CLAWMON_OPENAI_BASE_URL",
+            "https://api.openai.com/v1",
+        )
+        enrichment_timeout_seconds = _parse_float(
+            os.getenv("CLAWMON_ENRICHMENT_TIMEOUT_SECONDS"),
+            default=30.0,
+        )
+        enrichment_input_cost_per_1m_usd = _parse_float(
+            os.getenv("CLAWMON_ENRICHMENT_INPUT_COST_PER_1M_USD"),
+            default=0.0,
+        )
+        enrichment_output_cost_per_1m_usd = _parse_float(
+            os.getenv("CLAWMON_ENRICHMENT_OUTPUT_COST_PER_1M_USD"),
+            default=0.0,
+        )
         return cls(
             data_root=data_root,
             db_path=db_path,
             enrichment_enabled=enrichment_enabled,
             enrichment_budget_usd=enrichment_budget_usd,
+            enrichment_provider=enrichment_provider or "local",
             enrichment_model=enrichment_model,
+            enrichment_openai_api_key=enrichment_openai_api_key,
+            enrichment_openai_base_url=enrichment_openai_base_url,
+            enrichment_timeout_seconds=enrichment_timeout_seconds,
+            enrichment_input_cost_per_1m_usd=enrichment_input_cost_per_1m_usd,
+            enrichment_output_cost_per_1m_usd=enrichment_output_cost_per_1m_usd,
         )

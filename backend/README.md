@@ -132,4 +132,22 @@ Available variables:
 - `CLAWMON_DB_PATH` (default: `./data/clawmon.db`)
 - `CLAWMON_ENRICHMENT_ENABLED` (default: `false`)
 - `CLAWMON_ENRICHMENT_BUDGET_USD` (default: `0.25`)
+- `CLAWMON_ENRICHMENT_PROVIDER` (default: `local`, supported: `local`, `openai`)
 - `CLAWMON_ENRICHMENT_MODEL` (default: `local-heuristic-v1`)
+- `CLAWMON_OPENAI_API_KEY` (optional, required when provider=`openai`; `OPENAI_API_KEY` also supported)
+- `CLAWMON_OPENAI_BASE_URL` (default: `https://api.openai.com/v1`)
+- `CLAWMON_ENRICHMENT_TIMEOUT_SECONDS` (default: `30`)
+- `CLAWMON_ENRICHMENT_INPUT_COST_PER_1M_USD` (default: `0`)
+- `CLAWMON_ENRICHMENT_OUTPUT_COST_PER_1M_USD` (default: `0`)
+
+### Provider-backed Enrichment
+For real LLM enrichment with local fallback:
+
+```bash
+CLAWMON_ENRICHMENT_ENABLED=true
+CLAWMON_ENRICHMENT_PROVIDER=openai
+CLAWMON_ENRICHMENT_MODEL=gpt-4.1-mini
+CLAWMON_OPENAI_API_KEY=your_key_here
+```
+
+When provider calls fail or return invalid JSON, enrichment falls back to the local heuristic classifier and marks the fallback reason in stored summaries and job progress.

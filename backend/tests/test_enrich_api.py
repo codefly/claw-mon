@@ -31,7 +31,15 @@ def _assistant_usage_event(timestamp: str, text: str) -> dict:
     }
 
 
-def _create_client(tmp_path: Path, budget_usd: float = 0.25) -> tuple[TestClient, Path, Path]:
+def _create_client(
+    tmp_path: Path,
+    budget_usd: float = 0.25,
+    enrichment_provider: str = "local",
+    enrichment_model: str = "local-heuristic-v1",
+    openai_api_key: str | None = None,
+    input_cost_per_1m_usd: float = 0.0,
+    output_cost_per_1m_usd: float = 0.0,
+) -> tuple[TestClient, Path, Path]:
     data_root = tmp_path / "agents"
     db_path = tmp_path / "db" / "clawmon.db"
 
@@ -57,7 +65,11 @@ def _create_client(tmp_path: Path, budget_usd: float = 0.25) -> tuple[TestClient
             db_path=db_path,
             enrichment_enabled=True,
             enrichment_budget_usd=budget_usd,
-            enrichment_model="local-heuristic-v1",
+            enrichment_provider=enrichment_provider,
+            enrichment_model=enrichment_model,
+            enrichment_openai_api_key=openai_api_key,
+            enrichment_input_cost_per_1m_usd=input_cost_per_1m_usd,
+            enrichment_output_cost_per_1m_usd=output_cost_per_1m_usd,
         )
     )
     client = TestClient(app)
@@ -93,6 +105,7 @@ def test_enrich_endpoint_writes_session_enrichment(tmp_path: Path) -> None:
     assert final_job["progress"]["sessions_enriched"] == 2
     assert final_job["progress"]["sessions_skipped_unchanged"] == 0
     assert final_job["progress"]["sessions_failed"] == 0
+    assert final_job["progress"]["sessions_fallback_local"] == 0
 
     with get_sqlite_connection(db_path) as conn:
         rows = conn.execute(
@@ -106,6 +119,58 @@ def test_enrich_endpoint_writes_session_enrichment(tmp_path: Path) -> None:
     assert len(rows) == 2
     assert rows[0]["model_used"] == "local-heuristic-v1"
     assert rows[0]["content_hash"]
+
+
+def test_enrich_with_openai_provider_success(tmp_path: Path, monkeypatch) -> None:
+    client, db_path, _ = _create_client(
+        tmp_path,
+        enrichment_provider="openai",
+        enrichment_model="gpt-4.1-mini",
+        openai_api_key="test-key",
+        input_cost_per_1m_usd=0.4,
+        output_cost_per_1m_usd=1.2,
+    )
+
+    def mock_openai_call(**kwargs) -> dict:
+        return {
+            "model": kwargs["model_name"],
+            "choices": [
+                {
+                    "message": {
+                        "content": json.dumps(
+                            {
+                                "primary_category": "architecture",
+                                "secondary_categories": ["planning", "debugging"],
+                                "summary": "Session focused on planning architecture changes.",
+                                "confidence": 0.86,
+                            }
+                        )
+                    }
+                }
+            ],
+            "usage": {"prompt_tokens": 1000, "completion_tokens": 200},
+        }
+
+    monkeypatch.setattr(enrichment_module, "_call_openai_chat_completion", mock_openai_call)
+
+    response = client.post("/api/enrich")
+    assert response.status_code == 202
+    final_job = _wait_for_job(client, response.json()["job_id"])
+
+    assert final_job["status"] == "completed"
+    assert final_job["progress"]["sessions_enriched"] == 2
+    assert final_job["progress"]["sessions_fallback_local"] == 0
+    assert final_job["progress"]["budget_spent_actual_usd"] > 0
+
+    with get_sqlite_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT model_used, summary, primary_category FROM session_enrichment WHERE session_id = ?",
+            ("session-1",),
+        ).fetchone()
+
+    assert row["model_used"] == "gpt-4.1-mini"
+    assert row["primary_category"] == "architecture"
+    assert "[fallback:" not in row["summary"]
 
 
 def test_enrich_skips_unchanged_sessions(tmp_path: Path) -> None:
@@ -193,3 +258,69 @@ def test_enrich_isolates_session_failures(tmp_path: Path, monkeypatch) -> None:
     assert final_job["status"] == "completed"
     assert final_job["progress"]["sessions_failed"] == 1
     assert final_job["progress"]["sessions_enriched"] == 1
+
+
+def test_enrich_openai_failure_falls_back_to_local(tmp_path: Path, monkeypatch) -> None:
+    client, db_path, _ = _create_client(
+        tmp_path,
+        enrichment_provider="openai",
+        enrichment_model="gpt-4.1-mini",
+        openai_api_key="test-key",
+    )
+
+    def fail_openai_call(**_kwargs) -> dict:
+        raise RuntimeError("synthetic provider failure")
+
+    monkeypatch.setattr(enrichment_module, "_call_openai_chat_completion", fail_openai_call)
+
+    response = client.post("/api/enrich")
+    assert response.status_code == 202
+    final_job = _wait_for_job(client, response.json()["job_id"])
+
+    assert final_job["status"] == "completed"
+    assert final_job["progress"]["sessions_failed"] == 0
+    assert final_job["progress"]["sessions_fallback_local"] == 2
+
+    with get_sqlite_connection(db_path) as conn:
+        rows = conn.execute(
+            "SELECT model_used, summary FROM session_enrichment ORDER BY session_id"
+        ).fetchall()
+
+    assert all(row["model_used"] == "local-heuristic-v1" for row in rows)
+    assert all("[fallback: openai_error:RuntimeError]" in row["summary"] for row in rows)
+
+
+def test_enrich_openai_malformed_response_falls_back_to_local(
+    tmp_path: Path, monkeypatch
+) -> None:
+    client, db_path, _ = _create_client(
+        tmp_path,
+        enrichment_provider="openai",
+        enrichment_model="gpt-4.1-mini",
+        openai_api_key="test-key",
+    )
+
+    def malformed_openai_call(**_kwargs) -> dict:
+        return {
+            "model": "gpt-4.1-mini",
+            "choices": [{"message": {"content": "not-a-json-object"}}],
+            "usage": {"prompt_tokens": 120, "completion_tokens": 20},
+        }
+
+    monkeypatch.setattr(enrichment_module, "_call_openai_chat_completion", malformed_openai_call)
+
+    response = client.post("/api/enrich")
+    assert response.status_code == 202
+    final_job = _wait_for_job(client, response.json()["job_id"])
+
+    assert final_job["status"] == "completed"
+    assert final_job["progress"]["sessions_failed"] == 0
+    assert final_job["progress"]["sessions_fallback_local"] == 2
+
+    with get_sqlite_connection(db_path) as conn:
+        row = conn.execute(
+            "SELECT summary FROM session_enrichment WHERE session_id = ?",
+            ("session-1",),
+        ).fetchone()
+
+    assert "[fallback: openai_error:JSONDecodeError]" in row["summary"]
