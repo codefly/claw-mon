@@ -24,6 +24,9 @@ describe("useApiQuery", () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       statusText: "OK",
+      headers: {
+        get: () => "application/json"
+      },
       text: async () => JSON.stringify({ ok: true })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -43,6 +46,9 @@ describe("useApiQuery", () => {
       ok: false,
       status: 500,
       statusText: "Server Error",
+      headers: {
+        get: () => "application/json"
+      },
       text: async () => JSON.stringify({ detail: "boom" })
     });
     vi.stubGlobal("fetch", fetchMock);
@@ -55,6 +61,29 @@ describe("useApiQuery", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/error:Server Error/)).toBeInTheDocument();
+    });
+  });
+
+  it("handles non-json success payloads as errors", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      headers: {
+        get: () => "text/html"
+      },
+      text: async () => "<html>not-json</html>"
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(
+      <MemoryRouter>
+        <Harness path="/api/overview" />
+      </MemoryRouter>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/error:Expected JSON response/)).toBeInTheDocument();
     });
   });
 });

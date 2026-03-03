@@ -22,17 +22,39 @@ export async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> 
   });
 
   const raw = await response.text();
-  const body = raw.length > 0 ? tryParseJson(raw) : null;
+  const contentType = response.headers.get("content-type") ?? "";
+  const body = parseBody(raw, contentType);
 
   if (!response.ok) {
     const message = response.statusText || "Request failed";
     throw new ApiError(message, response.status, body);
   }
 
+  if (typeof body === "string" && body.length > 0) {
+    throw new ApiError(
+      "Expected JSON response but received non-JSON payload. Check backend URL/proxy.",
+      response.status,
+      body.slice(0, 500)
+    );
+  }
+
   return body as T;
 }
 
-function tryParseJson(raw: string): unknown {
+function parseBody(raw: string, contentType: string): unknown {
+  if (raw.length === 0) {
+    return null;
+  }
+
+  const shouldParseJson =
+    contentType.includes("application/json") ||
+    raw.trimStart().startsWith("{") ||
+    raw.trimStart().startsWith("[");
+
+  if (!shouldParseJson) {
+    return raw;
+  }
+
   try {
     return JSON.parse(raw);
   } catch {
