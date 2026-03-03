@@ -112,7 +112,7 @@ Implement manual enrichment pipeline and API-triggered job execution.
 - Tests cover unchanged-session skip behavior and write/update behavior.
 
 ## Story 8: Provider LLM Enrichment Integration
-**Status**: Planned
+**Status**: Complete (implemented)
 
 **Goal**
 Integrate a real LLM provider for enrichment while keeping the existing local heuristic classifier as fallback.

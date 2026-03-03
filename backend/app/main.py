@@ -86,7 +86,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 "data_root": str(app.state.settings.data_root),
                 "enrichment_enabled": app.state.settings.enrichment_enabled,
                 "enrichment_budget_usd": app.state.settings.enrichment_budget_usd,
+                "enrichment_provider": app.state.settings.enrichment_provider,
                 "enrichment_model": app.state.settings.enrichment_model,
+                "enrichment_openai_base_url": app.state.settings.enrichment_openai_base_url,
             },
         }
 
@@ -142,6 +144,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 db_path=app.state.settings.db_path,
                 budget_usd=app.state.settings.enrichment_budget_usd,
                 model_name=app.state.settings.enrichment_model,
+                provider=app.state.settings.enrichment_provider,
+                openai_api_key=app.state.settings.enrichment_openai_api_key,
+                openai_base_url=app.state.settings.enrichment_openai_base_url,
+                timeout_seconds=app.state.settings.enrichment_timeout_seconds,
+                input_cost_per_1m_usd=app.state.settings.enrichment_input_cost_per_1m_usd,
+                output_cost_per_1m_usd=app.state.settings.enrichment_output_cost_per_1m_usd,
             )
             set_job_completed(
                 app.state.settings.db_path,
