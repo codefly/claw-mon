@@ -54,6 +54,27 @@ print(stats)
 PY
 ```
 
+## Refresh API (Manual Trigger)
+Start local server:
+
+```bash
+cd backend
+source .venv/bin/activate
+uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+Trigger refresh:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/refresh
+```
+
+Check job status:
+
+```bash
+curl http://127.0.0.1:8000/api/jobs/<job_id>
+```
+
 ## Configuration
 Environment variables are auto-loaded from `backend/.env` on startup.
 Start by copying the template:
