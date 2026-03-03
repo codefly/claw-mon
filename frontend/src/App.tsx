@@ -14,6 +14,7 @@ export function App() {
         <Route index element={<Navigate to="/overview" replace />} />
         <Route path="overview" element={<OverviewPage />} />
         <Route path="sessions" element={<SessionsPage />} />
+        <Route path="sessions/:sessionId" element={<SessionsPage />} />
         <Route path="events" element={<EventsExplorerPage />} />
         <Route path="insights" element={<TaskInsightsPage />} />
         <Route path="settings" element={<SettingsPage />} />

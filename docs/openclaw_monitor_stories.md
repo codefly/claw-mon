@@ -140,6 +140,8 @@ Build React app shell with routes, top nav, and global filter model.
 - Minimal responsive layout works on desktop and mobile widths.
 
 ## Story 10: Overview UI
+**Status**: Complete (implemented)
+
 **Goal**
 Implement overview dashboards for token/cost analytics.
 
@@ -151,6 +153,8 @@ Implement overview dashboards for token/cost analytics.
 - Page handles empty states and no-data date ranges.
 
 ## Story 11: Sessions UI and Events Explorer UI
+**Status**: Complete (implemented)
+
 **Goal**
 Implement session drill-down and full event inspection experiences.
 
