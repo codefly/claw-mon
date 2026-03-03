@@ -65,7 +65,7 @@ p {
 }
 
 .mainContent {
-  max-width: 1200px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 1rem;
   display: grid;
@@ -135,6 +135,17 @@ button {
   gap: 0.75rem;
 }
 
+.pageStack {
+  display: grid;
+  gap: 1rem;
+}
+
+.twoColGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .statCard {
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -145,6 +156,10 @@ button {
 .statCard p {
   margin-top: 0.4rem;
   font-weight: 700;
+}
+
+.tokenMixLine {
+  margin-top: 0.75rem;
 }
 
 .tableWrap {
@@ -162,6 +177,123 @@ td {
   text-align: left;
   border-bottom: 1px solid var(--line);
   padding: 0.5rem;
+}
+
+.selectedRow {
+  background: #e8f7f6;
+}
+
+.selectedRow td {
+  font-weight: 600;
+}
+
+.barChartList {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.8rem;
+}
+
+.barChartRow,
+.barAction {
+  display: grid;
+  grid-template-columns: 160px 1fr 120px;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.barChartLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.barChartTrack {
+  background: #e3edef;
+  border-radius: 999px;
+  height: 0.65rem;
+  overflow: hidden;
+}
+
+.barChartFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0a6b67, #2ca19c);
+  border-radius: 999px;
+}
+
+.barChartValue {
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.barAction {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.55rem;
+  background: #ffffff;
+}
+
+.barAction:hover {
+  background: #f3fbfa;
+}
+
+.splitLayout {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1.2fr 1fr;
+}
+
+.detailMetaGrid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.nestedPanel {
+  padding: 0.75rem;
+}
+
+.nestedPanel h3 {
+  margin-bottom: 0.55rem;
+}
+
+.eventsFacetGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 0.65rem;
+}
+
+.inlineCheck {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.7rem;
+}
+
+.inlineCheck input {
+  width: auto;
+}
+
+.jsonPane {
+  margin: 0;
+  margin-top: 0.65rem;
+  max-height: 680px;
+  overflow: auto;
+  background: #0f1c2e;
+  color: #e4f4ff;
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
+.paginationWrap {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 0.7rem;
 }
 
 .simpleList {
@@ -213,6 +345,18 @@ td {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .twoColGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .splitLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .eventsFacetGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settingsGrid {
     grid-template-columns: 1fr;
   }
@@ -220,8 +364,19 @@ td {
 
 @media (max-width: 560px) {
   .filterRow,
-  .cardGrid {
+  .cardGrid,
+  .eventsFacetGrid,
+  .detailMetaGrid {
     grid-template-columns: 1fr;
+  }
+
+  .barChartRow,
+  .barAction {
+    grid-template-columns: 1fr;
+  }
+
+  .paginationWrap {
+    justify-content: space-between;
   }
 
   .mainContent {
