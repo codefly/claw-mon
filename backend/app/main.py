@@ -4,11 +4,17 @@ from __future__ import annotations
 
 import threading
 from dataclasses import asdict
+from typing import Literal
 
 from fastapi import FastAPI
 from fastapi import HTTPException
+from fastapi import Query
 from fastapi import status
 
+from app.analytics import query_breakdown
+from app.analytics import query_overview
+from app.analytics import query_trends
+from app.analytics import UsageFilters
 from app.config import Settings
 from app.db import apply_migrations
 from app.db import check_sqlite_connectivity
@@ -19,6 +25,34 @@ from app.jobs import set_job_completed
 from app.jobs import set_job_failed
 from app.jobs import set_job_running
 from app.logging_config import configure_logging
+
+
+def _normalize_filter_values(values: list[str] | None) -> list[str] | None:
+    if not values:
+        return None
+
+    normalized: list[str] = []
+    for value in values:
+        parts = [part.strip() for part in value.split(",")]
+        normalized.extend(part for part in parts if part)
+
+    return normalized or None
+
+
+def _build_usage_filters(
+    from_ts: str | None,
+    to_ts: str | None,
+    agents: list[str] | None,
+    models: list[str] | None,
+    providers: list[str] | None,
+) -> UsageFilters:
+    return UsageFilters(
+        from_ts=from_ts,
+        to_ts=to_ts,
+        agents=_normalize_filter_values(agents),
+        models=_normalize_filter_values(models),
+        providers=_normalize_filter_values(providers),
+    )
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -91,6 +125,55 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 detail=f"Job not found: {job_id}",
             )
         return job
+
+    @app.get("/api/overview")
+    def overview(
+        from_ts: str | None = Query(default=None, alias="from"),
+        to_ts: str | None = Query(default=None, alias="to"),
+        agent: list[str] | None = Query(default=None),
+        model: list[str] | None = Query(default=None),
+        provider: list[str] | None = Query(default=None),
+    ) -> dict[str, object]:
+        filters = _build_usage_filters(from_ts, to_ts, agent, model, provider)
+        return query_overview(app.state.settings.db_path, filters)
+
+    @app.get("/api/trends")
+    def trends(
+        bucket: Literal["day"] = Query(default="day"),
+        metric: Literal["cost", "tokens"] = Query(default="cost"),
+        from_ts: str | None = Query(default=None, alias="from"),
+        to_ts: str | None = Query(default=None, alias="to"),
+        agent: list[str] | None = Query(default=None),
+        model: list[str] | None = Query(default=None),
+        provider: list[str] | None = Query(default=None),
+    ) -> dict[str, object]:
+        filters = _build_usage_filters(from_ts, to_ts, agent, model, provider)
+        return query_trends(
+            app.state.settings.db_path,
+            filters=filters,
+            bucket=bucket,
+            metric=metric,
+        )
+
+    @app.get("/api/breakdown")
+    def breakdown(
+        by: Literal["agent", "model", "provider"] = Query(default="agent"),
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=50, ge=1, le=500),
+        from_ts: str | None = Query(default=None, alias="from"),
+        to_ts: str | None = Query(default=None, alias="to"),
+        agent: list[str] | None = Query(default=None),
+        model: list[str] | None = Query(default=None),
+        provider: list[str] | None = Query(default=None),
+    ) -> dict[str, object]:
+        filters = _build_usage_filters(from_ts, to_ts, agent, model, provider)
+        return query_breakdown(
+            app.state.settings.db_path,
+            filters=filters,
+            by=by,
+            page=page,
+            page_size=page_size,
+        )
 
     return app
 
