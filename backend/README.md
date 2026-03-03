@@ -11,6 +11,7 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
 ## Run Locally
@@ -38,7 +39,14 @@ python -m app.migrate
 ```
 
 ## Configuration
-Environment variables are auto-loaded from `backend/.env` on startup:
+Environment variables are auto-loaded from `backend/.env` on startup.
+Start by copying the template:
+
+```bash
+cp .env.example .env
+```
+
+Available variables:
 - `CLAWMON_DATA_ROOT` (default: `~/.openclaw/agents`)
 - `CLAWMON_DB_PATH` (default: `./data/clawmon.db`)
 - `CLAWMON_ENRICHMENT_ENABLED` (default: `false`)
