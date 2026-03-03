@@ -75,6 +75,12 @@ Check job status:
 curl http://127.0.0.1:8000/api/jobs/<job_id>
 ```
 
+Trigger enrichment:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/enrich
+```
+
 ## Analytics Query APIs
 Overview totals:
 
@@ -125,3 +131,5 @@ Available variables:
 - `CLAWMON_DATA_ROOT` (default: `~/.openclaw/agents`)
 - `CLAWMON_DB_PATH` (default: `./data/clawmon.db`)
 - `CLAWMON_ENRICHMENT_ENABLED` (default: `false`)
+- `CLAWMON_ENRICHMENT_BUDGET_USD` (default: `0.25`)
+- `CLAWMON_ENRICHMENT_MODEL` (default: `local-heuristic-v1`)

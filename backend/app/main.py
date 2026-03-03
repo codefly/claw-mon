@@ -18,6 +18,7 @@ from app.analytics import UsageFilters
 from app.config import Settings
 from app.db import apply_migrations
 from app.db import check_sqlite_connectivity
+from app.enrichment import enrich_sessions
 from app.explorer import EventFilters
 from app.explorer import query_events
 from app.explorer import query_session_detail
@@ -68,6 +69,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = resolved_settings
     apply_migrations(app.state.settings.db_path)
     app.state.refresh_lock = threading.Lock()
+    app.state.enrich_lock = threading.Lock()
 
     @app.get("/api/health")
     def health() -> dict[str, object]:
@@ -83,6 +85,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "config": {
                 "data_root": str(app.state.settings.data_root),
                 "enrichment_enabled": app.state.settings.enrichment_enabled,
+                "enrichment_budget_usd": app.state.settings.enrichment_budget_usd,
+                "enrichment_model": app.state.settings.enrichment_model,
             },
         }
 
@@ -130,6 +134,48 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 detail=f"Job not found: {job_id}",
             )
         return job
+
+    def _run_enrich_job(job_id: str) -> None:
+        try:
+            set_job_running(app.state.settings.db_path, job_id)
+            stats = enrich_sessions(
+                db_path=app.state.settings.db_path,
+                budget_usd=app.state.settings.enrichment_budget_usd,
+                model_name=app.state.settings.enrichment_model,
+            )
+            set_job_completed(
+                app.state.settings.db_path,
+                job_id,
+                progress=asdict(stats),
+            )
+        except Exception as exc:
+            set_job_failed(app.state.settings.db_path, job_id, error=str(exc))
+        finally:
+            app.state.enrich_lock.release()
+
+    @app.post("/api/enrich", status_code=status.HTTP_202_ACCEPTED)
+    def enrich() -> dict[str, object]:
+        if not app.state.settings.enrichment_enabled:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Enrichment is disabled by configuration",
+            )
+
+        if not app.state.enrich_lock.acquire(blocking=False):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Enrichment job already running",
+            )
+
+        try:
+            job_id = create_job(app.state.settings.db_path, job_type="enrich")
+        except Exception:
+            app.state.enrich_lock.release()
+            raise
+
+        thread = threading.Thread(target=_run_enrich_job, args=(job_id,), daemon=True)
+        thread.start()
+        return {"job_id": job_id, "status": "queued"}
 
     @app.get("/api/overview")
     def overview(

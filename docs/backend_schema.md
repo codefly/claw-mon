@@ -67,6 +67,8 @@ Session-level enrichment output.
 - `summary` (TEXT)
 - `confidence` (REAL, 0..1)
 - `model_used` (TEXT)
+- `content_hash` (TEXT)
+- `estimated_cost_usd` (REAL)
 - `updated_at` (TEXT)
 
 ### `jobs`
@@ -91,6 +93,7 @@ Created in baseline migration:
 - `idx_usage_events_model_timestamp`
 - `idx_usage_events_session_id`
 - `idx_jobs_status_requested_at`
+- `idx_session_enrichment_content_hash`
 
 ## Notes
 - SQLite foreign keys are enforced via `PRAGMA foreign_keys = ON` in app connections.

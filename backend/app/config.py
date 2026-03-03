@@ -19,6 +19,15 @@ def _parse_bool(value: str | None, default: bool) -> bool:
     return value.strip().lower() in _TRUE_VALUES
 
 
+def _parse_float(value: str | None, default: float) -> float:
+    if value is None:
+        return default
+    try:
+        return float(value)
+    except ValueError:
+        return default
+
+
 def load_environment(env_file: Path | None = None) -> None:
     """Load environment values from backend .env file if present."""
     target_file = env_file or DEFAULT_ENV_FILE
@@ -30,6 +39,8 @@ class Settings:
     data_root: Path
     db_path: Path
     enrichment_enabled: bool
+    enrichment_budget_usd: float = 0.25
+    enrichment_model: str = "local-heuristic-v1"
 
     @classmethod
     def from_env(cls, env_file: Path | None = None) -> "Settings":
@@ -39,8 +50,15 @@ class Settings:
         ).expanduser()
         db_path = Path(os.getenv("CLAWMON_DB_PATH", "./data/clawmon.db")).expanduser()
         enrichment_enabled = _parse_bool(os.getenv("CLAWMON_ENRICHMENT_ENABLED"), False)
+        enrichment_budget_usd = _parse_float(
+            os.getenv("CLAWMON_ENRICHMENT_BUDGET_USD"),
+            default=0.25,
+        )
+        enrichment_model = os.getenv("CLAWMON_ENRICHMENT_MODEL", "local-heuristic-v1")
         return cls(
             data_root=data_root,
             db_path=db_path,
             enrichment_enabled=enrichment_enabled,
+            enrichment_budget_usd=enrichment_budget_usd,
+            enrichment_model=enrichment_model,
         )
