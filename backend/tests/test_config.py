@@ -12,6 +12,8 @@ def test_from_env_loads_values_from_env_file(tmp_path: Path, monkeypatch) -> Non
                 "CLAWMON_DATA_ROOT=/tmp/custom-agents",
                 "CLAWMON_DB_PATH=/tmp/custom-clawmon.db",
                 "CLAWMON_ENRICHMENT_ENABLED=true",
+                "CLAWMON_ENRICHMENT_BUDGET_USD=1.75",
+                "CLAWMON_ENRICHMENT_MODEL=test-model",
             ]
         ),
         encoding="utf-8",
@@ -20,12 +22,16 @@ def test_from_env_loads_values_from_env_file(tmp_path: Path, monkeypatch) -> Non
     monkeypatch.delenv("CLAWMON_DATA_ROOT", raising=False)
     monkeypatch.delenv("CLAWMON_DB_PATH", raising=False)
     monkeypatch.delenv("CLAWMON_ENRICHMENT_ENABLED", raising=False)
+    monkeypatch.delenv("CLAWMON_ENRICHMENT_BUDGET_USD", raising=False)
+    monkeypatch.delenv("CLAWMON_ENRICHMENT_MODEL", raising=False)
 
     settings = Settings.from_env(env_file=env_file)
 
     assert settings.data_root == Path("/tmp/custom-agents")
     assert settings.db_path == Path("/tmp/custom-clawmon.db")
     assert settings.enrichment_enabled is True
+    assert settings.enrichment_budget_usd == 1.75
+    assert settings.enrichment_model == "test-model"
 
 
 def test_process_env_overrides_env_file(tmp_path: Path, monkeypatch) -> None:

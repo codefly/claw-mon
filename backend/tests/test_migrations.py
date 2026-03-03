@@ -27,6 +27,7 @@ EXPECTED_INDEXES = {
     "idx_usage_events_model_timestamp",
     "idx_usage_events_session_id",
     "idx_jobs_status_requested_at",
+    "idx_session_enrichment_content_hash",
 }
 
 
@@ -36,6 +37,7 @@ def test_apply_migrations_creates_expected_tables_and_indexes(tmp_path: Path) ->
     applied = apply_migrations(db_path)
 
     assert "0001_initial" in applied
+    assert "0002_session_enrichment_hash" in applied
 
     with get_sqlite_connection(db_path) as conn:
         tables = {
@@ -50,9 +52,15 @@ def test_apply_migrations_creates_expected_tables_and_indexes(tmp_path: Path) ->
                 "SELECT name FROM sqlite_master WHERE type = 'index'"
             )
         }
+        session_enrichment_columns = {
+            row["name"]
+            for row in conn.execute("PRAGMA table_info(session_enrichment)")
+        }
 
     assert EXPECTED_TABLES.issubset(tables)
     assert EXPECTED_INDEXES.issubset(indexes)
+    assert "content_hash" in session_enrichment_columns
+    assert "estimated_cost_usd" in session_enrichment_columns
 
 
 def test_apply_migrations_is_idempotent(tmp_path: Path) -> None:
@@ -61,7 +69,7 @@ def test_apply_migrations_is_idempotent(tmp_path: Path) -> None:
     first_apply = apply_migrations(db_path)
     second_apply = apply_migrations(db_path)
 
-    assert first_apply == ["0001_initial"]
+    assert first_apply == ["0001_initial", "0002_session_enrichment_hash"]
     assert second_apply == []
 
     with get_sqlite_connection(db_path) as conn:
@@ -69,7 +77,7 @@ def test_apply_migrations_is_idempotent(tmp_path: Path) -> None:
             "SELECT COUNT(*) AS count FROM schema_migrations"
         ).fetchone()["count"]
 
-    assert migration_count == 1
+    assert migration_count == 2
 
 
 def test_foreign_keys_are_enforced(tmp_path: Path) -> None:
