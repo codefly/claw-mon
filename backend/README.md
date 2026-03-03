@@ -75,6 +75,25 @@ Check job status:
 curl http://127.0.0.1:8000/api/jobs/<job_id>
 ```
 
+## Analytics Query APIs
+Overview totals:
+
+```bash
+curl "http://127.0.0.1:8000/api/overview?from=2026-03-01T00:00:00Z&to=2026-03-02T23:59:59Z&agent=agent-a"
+```
+
+Daily trends:
+
+```bash
+curl "http://127.0.0.1:8000/api/trends?bucket=day&metric=cost"
+```
+
+Breakdown by model (paginated):
+
+```bash
+curl "http://127.0.0.1:8000/api/breakdown?by=model&page=1&page_size=20"
+```
+
 ## Configuration
 Environment variables are auto-loaded from `backend/.env` on startup.
 Start by copying the template:
