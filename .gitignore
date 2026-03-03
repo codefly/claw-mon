@@ -9,3 +9,7 @@ __pycache__/
 
 # Local runtime data
 backend/data/
+
+# Environment files
+.env
+backend/.env
