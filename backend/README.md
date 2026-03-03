@@ -94,6 +94,25 @@ Breakdown by model (paginated):
 curl "http://127.0.0.1:8000/api/breakdown?by=model&page=1&page_size=20"
 ```
 
+## Sessions and Events APIs
+List sessions (paginated):
+
+```bash
+curl "http://127.0.0.1:8000/api/sessions?page=1&page_size=50&agent=agent-a"
+```
+
+Session detail with mixed timeline:
+
+```bash
+curl "http://127.0.0.1:8000/api/sessions/<session_id>?page=1&page_size=100"
+```
+
+Explore raw events with filters:
+
+```bash
+curl "http://127.0.0.1:8000/api/events?type=message&role=assistant&usage_bearing_only=true&page=1&page_size=100"
+```
+
 ## Configuration
 Environment variables are auto-loaded from `backend/.env` on startup.
 Start by copying the template:

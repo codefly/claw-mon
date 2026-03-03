@@ -18,6 +18,11 @@ from app.analytics import UsageFilters
 from app.config import Settings
 from app.db import apply_migrations
 from app.db import check_sqlite_connectivity
+from app.explorer import EventFilters
+from app.explorer import query_events
+from app.explorer import query_session_detail
+from app.explorer import query_sessions
+from app.explorer import SessionFilters
 from app.ingestion import ingest_data_root
 from app.jobs import create_job
 from app.jobs import get_job
@@ -171,6 +176,77 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             app.state.settings.db_path,
             filters=filters,
             by=by,
+            page=page,
+            page_size=page_size,
+        )
+
+    @app.get("/api/sessions")
+    def sessions(
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=50, ge=1, le=500),
+        from_ts: str | None = Query(default=None, alias="from"),
+        to_ts: str | None = Query(default=None, alias="to"),
+        agent: list[str] | None = Query(default=None),
+        model: list[str] | None = Query(default=None),
+        provider: list[str] | None = Query(default=None),
+    ) -> dict[str, object]:
+        filters = SessionFilters(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            agents=_normalize_filter_values(agent),
+            models=_normalize_filter_values(model),
+            providers=_normalize_filter_values(provider),
+        )
+        return query_sessions(
+            app.state.settings.db_path,
+            filters=filters,
+            page=page,
+            page_size=page_size,
+        )
+
+    @app.get("/api/sessions/{session_id}")
+    def session_detail(
+        session_id: str,
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=100, ge=1, le=1000),
+    ) -> dict[str, object]:
+        payload = query_session_detail(
+            app.state.settings.db_path,
+            session_id=session_id,
+            page=page,
+            page_size=page_size,
+        )
+        if payload is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Session not found: {session_id}",
+            )
+        return payload
+
+    @app.get("/api/events")
+    def events(
+        page: int = Query(default=1, ge=1),
+        page_size: int = Query(default=100, ge=1, le=1000),
+        from_ts: str | None = Query(default=None, alias="from"),
+        to_ts: str | None = Query(default=None, alias="to"),
+        event_type: list[str] | None = Query(default=None, alias="type"),
+        role: list[str] | None = Query(default=None),
+        agent: list[str] | None = Query(default=None),
+        session: list[str] | None = Query(default=None),
+        usage_bearing_only: bool = Query(default=False),
+    ) -> dict[str, object]:
+        filters = EventFilters(
+            from_ts=from_ts,
+            to_ts=to_ts,
+            event_types=_normalize_filter_values(event_type),
+            roles=_normalize_filter_values(role),
+            agents=_normalize_filter_values(agent),
+            sessions=_normalize_filter_values(session),
+            usage_bearing_only=usage_bearing_only,
+        )
+        return query_events(
+            app.state.settings.db_path,
+            filters=filters,
             page=page,
             page_size=page_size,
         )
