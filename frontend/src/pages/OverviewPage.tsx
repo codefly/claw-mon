@@ -34,26 +34,33 @@ export function OverviewPage() {
 
   return (
     <ApiStateCard title="Overview" query={query}>
-      {(payload) => (
-        <div className="cardGrid">
-          <article className="statCard">
-            <h3>Total Cost</h3>
-            <p>${payload.summary.total_cost_usd.toFixed(4)}</p>
-          </article>
-          <article className="statCard">
-            <h3>Total Tokens</h3>
-            <p>{payload.summary.total_tokens.toLocaleString()}</p>
-          </article>
-          <article className="statCard">
-            <h3>Usage Events</h3>
-            <p>{payload.summary.events.toLocaleString()}</p>
-          </article>
-          <article className="statCard">
-            <h3>Top Model</h3>
-            <p>{payload.top_model_by_spend?.model ?? "-"}</p>
-          </article>
-        </div>
-      )}
+      {(payload) => {
+        const summary = payload.summary;
+        if (!summary) {
+          return <p className="muted">Overview payload missing summary data.</p>;
+        }
+
+        return (
+          <div className="cardGrid">
+            <article className="statCard">
+              <h3>Total Cost</h3>
+              <p>${summary.total_cost_usd.toFixed(4)}</p>
+            </article>
+            <article className="statCard">
+              <h3>Total Tokens</h3>
+              <p>{summary.total_tokens.toLocaleString()}</p>
+            </article>
+            <article className="statCard">
+              <h3>Usage Events</h3>
+              <p>{summary.events.toLocaleString()}</p>
+            </article>
+            <article className="statCard">
+              <h3>Top Model</h3>
+              <p>{payload.top_model_by_spend?.model ?? "-"}</p>
+            </article>
+          </div>
+        );
+      }}
     </ApiStateCard>
   );
 }

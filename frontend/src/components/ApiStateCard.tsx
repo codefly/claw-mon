@@ -9,6 +9,22 @@ type ApiStateCardProps<T> = {
 };
 
 export function ApiStateCard<T>({ title, query, children }: ApiStateCardProps<T>) {
+  let renderedContent: ReactNode = null;
+
+  if (!query.loading && !query.error && query.data) {
+    try {
+      renderedContent = children(query.data);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown rendering error";
+      renderedContent = (
+        <div className="errorBlock">
+          <p>Unexpected response shape.</p>
+          <pre>{message}</pre>
+        </div>
+      );
+    }
+  }
+
   return (
     <section className="panel" aria-live="polite">
       <div className="panelHeader">
@@ -27,7 +43,7 @@ export function ApiStateCard<T>({ title, query, children }: ApiStateCardProps<T>
         </div>
       )}
 
-      {!query.loading && !query.error && query.data && children(query.data)}
+      {!query.loading && !query.error && query.data && renderedContent}
 
       {!query.loading && !query.error && !query.data && (
         <p className="muted">No data returned.</p>
