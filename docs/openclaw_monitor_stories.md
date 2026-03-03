@@ -12,6 +12,8 @@ Stories are intentionally medium-sized (not too granular), and each includes a c
 ## 3. Stories
 
 ## Story 1: Backend Project Skeleton and Local Runtime
+**Status**: Complete (merged)
+
 **Goal**
 Set up a FastAPI backend with configuration, logging, and local run commands. 
 
@@ -24,6 +26,8 @@ Set up a FastAPI backend with configuration, logging, and local run commands.
 - Basic test framework is configured and one health endpoint test passes.
 
 ## Story 2: SQLite Schema and Migration Baseline
+**Status**: Complete (merged)
+
 **Goal**
 Create SQLite schema for raw events, usage events, offsets, sessions, agents, enrichment, and jobs.
 
@@ -35,6 +39,8 @@ Create SQLite schema for raw events, usage events, offsets, sessions, agents, en
 - Schema is documented in `docs/` with table/column notes.
 
 ## Story 3: Incremental Ingestion Engine (Library Layer)
+**Status**: Complete (merged)
+
 **Goal**
 Implement reusable ingestion logic that scans OpenClaw session files and persists all events + derived usage rows.
 
@@ -47,6 +53,8 @@ Implement reusable ingestion logic that scans OpenClaw session files and persist
 - Unit tests cover append/truncate/malformed-line behavior.
 
 ## Story 4: Refresh API and Job Tracking
+**Status**: Complete (merged)
+
 **Goal**
 Expose manual refresh flow through API and persist job state/progress.
 
@@ -58,6 +66,8 @@ Expose manual refresh flow through API and persist job state/progress.
 - Integration test verifies data appears after refresh on fixture files.
 
 ## Story 5: Query APIs for Overview and Breakdowns
+**Status**: Complete (merged)
+
 **Goal**
 Provide backend endpoints for dashboard metrics and charts.
 
@@ -72,6 +82,8 @@ Provide backend endpoints for dashboard metrics and charts.
 - API tests validate totals against fixture-derived expected values.
 
 ## Story 6: Query APIs for Sessions and Events Explorer
+**Status**: Complete (merged)
+
 **Goal**
 Provide backend endpoints for session drill-down and full raw event exploration.
 
@@ -86,6 +98,8 @@ Provide backend endpoints for session drill-down and full raw event exploration.
 - API tests verify filters, pagination, and contract shape.
 
 ## Story 7: Enrichment Engine and Enrich API
+**Status**: Complete (merged)
+
 **Goal**
 Implement manual enrichment pipeline and API-triggered job execution.
 
@@ -97,7 +111,24 @@ Implement manual enrichment pipeline and API-triggered job execution.
 - Failures are isolated per session and reported in job counters.
 - Tests cover unchanged-session skip behavior and write/update behavior.
 
-## Story 8: Frontend App Shell and Shared Filter State
+## Story 8: Provider LLM Enrichment Integration
+**Status**: Planned
+
+**Goal**
+Integrate a real LLM provider for enrichment while keeping the existing local heuristic classifier as fallback.
+
+**Definition of Done**
+- Enrichment service supports provider-backed classification mode (configurable provider/model).
+- API key/config handling is implemented without committing secrets.
+- Prompt + response contract is structured (JSON schema or strict parser) and validated.
+- LLM output is normalized into existing `session_enrichment` fields.
+- If provider call fails, enrichment falls back to local classifier and records fallback reason.
+- Budget accounting includes provider-estimated/actual spend and is reflected in job progress.
+- Tests cover success path, provider failure fallback, and malformed response handling.
+
+## Story 9: Frontend App Shell and Shared Filter State
+**Status**: Complete (merged)
+
 **Goal**
 Build React app shell with routes, top nav, and global filter model.
 
@@ -108,7 +139,7 @@ Build React app shell with routes, top nav, and global filter model.
 - API client layer handles loading/error states consistently.
 - Minimal responsive layout works on desktop and mobile widths.
 
-## Story 9: Overview UI
+## Story 10: Overview UI
 **Goal**
 Implement overview dashboards for token/cost analytics.
 
@@ -119,7 +150,7 @@ Implement overview dashboards for token/cost analytics.
 - Top burn sessions table links to Session detail route.
 - Page handles empty states and no-data date ranges.
 
-## Story 10: Sessions UI and Events Explorer UI
+## Story 11: Sessions UI and Events Explorer UI
 **Goal**
 Implement session drill-down and full event inspection experiences.
 
@@ -130,7 +161,7 @@ Implement session drill-down and full event inspection experiences.
 - Selected event displays raw JSON payload.
 - Usage-bearing only toggle works end-to-end with API.
 
-## Story 11: Task Insights UI
+## Story 12: Task Insights UI
 **Goal**
 Expose enrichment results in category-based analytics views.
 
@@ -140,7 +171,7 @@ Expose enrichment results in category-based analytics views.
 - Drill-down exposes representative sessions and links to events/sessions pages.
 - Page gracefully handles enrichment-not-run and partial-enrichment states.
 
-## Story 12: Settings UI and Manual Operations
+## Story 13: Settings UI and Manual Operations
 **Goal**
 Provide operational controls for refresh/enrich/reindex and core settings.
 
@@ -151,7 +182,7 @@ Provide operational controls for refresh/enrich/reindex and core settings.
 - Operation outcomes are visible with timestamps and summary counts.
 - Settings persistence is documented and tested.
 
-## Story 13: Reindex Flow and Recovery Hardening
+## Story 14: Reindex Flow and Recovery Hardening
 **Goal**
 Enable full rebuild from source files and improve resilience for edge cases.
 
@@ -161,7 +192,7 @@ Enable full rebuild from source files and improve resilience for edge cases.
 - Recovery behavior documented for corrupted offsets and malformed files.
 - End-to-end test validates rebuild equals fresh ingest totals.
 
-## Story 14: End-to-End Quality Gate and Release Docs
+## Story 15: End-to-End Quality Gate and Release Docs
 **Goal**
 Finalize MVP quality bar and onboarding docs.
 
